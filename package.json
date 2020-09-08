@@ -46,6 +46,7 @@
   },
   "homepage": "https://github.com/editor-js/link#readme",
   "dependencies": {
-    "@babel/runtime": "^7.10.2"
+    "@babel/runtime": "^7.10.2",
+    "lodash.debounce": "4.0.8"
   }
 }

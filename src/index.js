@@ -6,7 +6,7 @@
  */
 
 /**
- * @typedef {Object} metaData
+ * @typedef {object} metaData
  * @description Fetched link meta data
  * @property {string} image - link's meta image
  * @property {string} title - link's meta title
@@ -19,6 +19,8 @@ import ToolboxIcon from './svg/toolbox.svg';
 import ajax from '@codexteam/ajax';
 // eslint-disable-next-line
 import polyfill from 'url-polyfill';
+import debounce from 'lodash.debounce';
+import untils from './untils';
 
 /**
  * @typedef {object} UploadResponseFormat
@@ -35,17 +37,18 @@ export default class LinkTool {
    * icon - Tool icon's SVG
    * title - title to show in toolbox
    *
-   * @return {{icon: string, title: string}}
+   * @returns {{icon: string, title: string}}
    */
   static get toolbox() {
     return {
       icon: ToolboxIcon,
-      title: 'Link'
+      title: 'Smart Link',
     };
   }
 
   /**
    * Allow to press Enter inside the LinkTool input
+   *
    * @returns {boolean}
    * @public
    */
@@ -58,14 +61,23 @@ export default class LinkTool {
    * @param {config} config - user config for Tool
    * @param {object} api - Editor.js API
    */
-  constructor({ data, config, api }) {
+  constructor({
+    data,
+    config,
+    api,
+  }) {
     this.api = api;
 
     /**
      * Tool's initial config
      */
     this.config = {
-      endpoint: config.endpoint || ''
+      endpoint: config.endpoint || '',
+      updater: config.updater || null,
+      targetClick: config.targetClick || null,
+      suggester: config.suggester || null,
+      suggests: config.suggests,
+
     };
 
     this.nodes = {
@@ -74,29 +86,37 @@ export default class LinkTool {
       progress: null,
       input: null,
       inputHolder: null,
+      suggests: null,
       linkContent: null,
       linkImage: null,
       linkTitle: null,
       linkDescription: null,
-      linkText: null
+      linkText: null,
     };
-
-    this._data = {
-      link: '',
-      meta: {}
-    };
-
+    console.log('constructor', data);
+    // 初始有值的情况
+    this._data = JSON.stringify(data) !== '{}' ? data
+      : {
+        target: '',
+        target_id: '',
+        target_type: '',
+        link: '',
+        meta: {},
+      };
     this.data = data;
   }
 
   /**
    * Renders Block content
+   *
    * @public
    *
-   * @return {HTMLDivElement}
+   * @returns {HTMLDivElement}
    */
   render() {
     this.nodes.wrapper = this.make('div', this.CSS.baseClass);
+    this.nodes.wrapper.setAttribute('data-block-id', this.data.id);
+    this.nodes.wrapper.setAttribute('data-block-type', 'link');
     this.nodes.container = this.make('div', this.CSS.container);
 
     this.nodes.inputHolder = this.makeInputHolder();
@@ -119,9 +139,10 @@ export default class LinkTool {
 
   /**
    * Return Block data
+   *
    * @public
    *
-   * @return {LinkToolData}
+   * @returns {LinkToolData}
    */
   save() {
     return this.data;
@@ -129,26 +150,109 @@ export default class LinkTool {
 
   /**
    * Stores all Tool's data
+   *
    * @param {LinkToolData} data
    */
   set data(data) {
+    const compared = this.compareData(data, this._data);
+    const hasMeta = !!(data.meta && Object.keys(data.meta).length);
+
+    // 处理数据：
+    if (hasMeta) {
+      data.meta.title = untils.stripTags(data.meta.title);
+      data.meta.description = untils.stripTags(data.meta.description);
+    }
+
     this._data = Object.assign({}, {
+      id: data.id || this._data.id,
+      target: untils.stripTags(data.target) || this._data.target || '未命名',
+      target_id: data.target_id || this._data.target_id,
+      target_type: data.target_type || this._data.target_type,
       link: data.link || this._data.link,
-      meta: data.meta || this._data.meta
+      meta: data.meta || this._data.meta,
     });
+    // 说明是新数据
+
+    if (!this._data.id && this._data.target_id) {
+      this._data.id = this.uuid();
+      this.createLink(this._data);
+    }
+  }
+
+  /**
+   * 比较新老数据
+   *
+   * @param {*} newData
+   * @param {*} oldData
+   * @memberof LinkTool
+   */
+  compareData(newData, oldData) {
+    // 如果新数据
+
+    const compareObject = {}; // 0:没有变化，update:1,add:2
+
+    for (const key in newData) {
+      if (oldData[key] && typeof oldData[key] !== 'object') {
+        compareObject[key] = newData[key] === oldData[key] ? 0 : 1;
+      } else {
+        compareObject[key] = 2;
+      }
+
+      if (oldData[key] && typeof oldData[key] === 'object') {
+        compareObject[key] = JSON.stringify(newData[key]) === JSON.stringify(oldData[key]) ? 0 : 1;
+      }
+    }
+    console.log('compareObject', newData, oldData, compareObject);
+    // console.log('compareObject', compareObject);
+
+    return compareObject;
+  }
+
+  /**
+   * 关联视图更新
+   *
+   * @memberof LinkTool
+   */
+  updateView() {
+    this.nodes.wrapper.id = this.data.id;
+    if (this.data.meta && Object.keys(this.data.meta).length) {
+      this.nodes.inputHolder.remove();
+      this.nodes.container.appendChild(this.nodes.linkContent);
+      this.showLinkPreview(this.data.meta);
+    } else {
+      this.nodes.container.appendChild(this.nodes.inputHolder);
+    }
   }
 
   /**
    * Return Tool data
-   * @return {LinkToolData} data
+   *
+   * @param {linkToolData} data update
+   */
+  async createLink(data) {
+    if (typeof this.config.updater !== 'function') {
+      console.warn('updater of link config must be a function');
+
+      return;
+    }
+
+    const res = await this.config.updater(data, 'create');
+
+    console.log('createLink', res, data);
+  }
+
+  /**
+   * Return Tool data
+   *
+   * @returns {LinkToolData} data
    */
   get data() {
     return this._data;
   }
 
   /**
-   * @return {object} - Link Tool styles
-   * @constructor
+   * @returns {object} - Link Tool styles
+   * @class
    */
   get CSS() {
     return {
@@ -170,28 +274,39 @@ export default class LinkTool {
       linkText: 'link-tool__anchor',
       progress: 'link-tool__progress',
       progressLoading: 'link-tool__progress--loading',
-      progressLoaded: 'link-tool__progress--loaded'
+      progressLoaded: 'link-tool__progress--loaded',
+      suggests: 'link-tool__suggests',
+      suggestsShow: 'link-tool__suggests--show',
+      suggestsLoading: 'link-tool__suggests--loading',
+      suggestsLoaded: 'link-tool__suggests--loaded',
+      suggestsItem: 'link-tool__suggests-item',
+      suggestsItemTitle: 'link-tool__suggests-item-title',
+      suggestsItemContent: 'link-tool__suggests-item-content',
     };
   }
 
   /**
    * Prepare input holder
-   * @return {HTMLElement} - url input
+   *
+   * @returns {HTMLElement} - url input
    */
   makeInputHolder() {
     const inputHolder = this.make('div', this.CSS.inputHolder);
 
     this.nodes.progress = this.make('label', this.CSS.progress);
     this.nodes.input = this.make('div', [this.CSS.input, this.CSS.inputEl], {
-      contentEditable: true
+      contentEditable: true,
     });
 
-    this.nodes.input.dataset.placeholder = this.api.i18n.t('Link');
+    this.nodes.input.dataset.placeholder = this.api.i18n.t('Type Some Text To Link');
 
     this.nodes.input.addEventListener('paste', (event) => {
-      this.startFetching(event);
-    });
+      // todo:外链解析
+      // this.startFetching(event);
 
+    });
+    this.nodes.input.addEventListener('paste', this.setSuggestItem());
+    // todo：这里要改成输入连接，搜索文档接口获得数据文档数据，生成block
     this.nodes.input.addEventListener('keydown', (event) => {
       const [ENTER, A] = [13, 65];
       const cmdPressed = event.ctrlKey || event.metaKey;
@@ -200,25 +315,169 @@ export default class LinkTool {
         case ENTER:
           event.preventDefault();
           event.stopPropagation();
-
-          this.startFetching(event);
+          this.setSuggestItem()(event);
+          // this.startFetching(event);
           break;
         case A:
           if (cmdPressed) {
-            this.selectLinkUrl(event);
+            // event.preventDefault();
+            event.stopPropagation();
+            // this.selectLinkUrl(event);
           }
           break;
       }
     });
 
+    this.nodes.input.addEventListener('keyup', debounce(this.setSuggestItem(), 2000));
+    this.nodes.input.addEventListener('focus', this.onInputFocus());
+    this.nodes.input.addEventListener('blur', this.onInputBlur());
+
+    this.nodes.suggests = this.make('div', this.CSS.suggests);
     inputHolder.appendChild(this.nodes.progress);
     inputHolder.appendChild(this.nodes.input);
+    inputHolder.appendChild(this.nodes.suggests);
 
     return inputHolder;
   }
 
   /**
+   * 对焦事件
+   *
+   * @param event
+   */
+  onInputFocus() {
+    const that = this;
+
+    return function (event) {
+      that.nodes.suggests.classList.add(that.CSS.suggestsShow);
+      // 如果是空的话，那么调取所
+      if (that.nodes.input.textContent.trim().length === 0) {
+        // 加载默认数据
+        // console.log('default suggests', that.config.suggests);
+        if (that.config.suggests && that.config.suggests.length > 0) {
+          that.nodes.suggests.innerHTML = '';
+          const itemsDOM = that.makeItems({
+            items: that.config.suggests,
+          });
+
+          itemsDOM.forEach(item => {
+            that.nodes.suggests.appendChild(item);
+          });
+        }
+      }
+    };
+  }
+
+  /**
+   * 失去焦点事件
+   *
+   * @param event
+   */
+  onInputBlur() {
+    const that = this;
+
+    return function (event) {
+      setTimeout(() => {
+        that.nodes.suggests.classList.remove(that.CSS.suggestsShow);
+      }, 500);
+      // 如果是空的话，那么调取所
+    };
+  }
+
+  /**
+   * make input suggest dom
+   *
+   * @param event
+   */
+  setSuggestItem(event) {
+    const that = this;
+
+    return async function (event) {
+      const value = that.nodes.input.textContent;
+      const res = await that.config.suggester(value);
+
+      // console.log(res);
+      if (res) {
+        that.nodes.suggests.innerHTML = '';
+        const itemsDOM = that.makeItems(res);
+
+        itemsDOM.forEach(item => {
+          that.nodes.suggests.appendChild(item);
+        });
+      }
+    };
+  }
+
+  /**
+   * makeItems
+   *
+   * @param {*} event
+   */
+  makeItems({
+    items,
+    total,
+  }) {
+    const itemsDOM = [];
+
+    items.forEach(item => {
+      const itemDOM = this.make('div', this.CSS.suggestsItem);
+
+      itemDOM.setAttribute('data-id', item.eid);
+      itemDOM.setAttribute('data-type', 'essay');
+
+      const itemTitle = this.make('div', this.CSS.suggestsItemTitle);
+
+      itemTitle.innerHTML = item.name;
+      const itemContent = this.make('div', this.CSS.suggestsItemContent);
+
+      itemContent.innerHTML = item.summary;
+
+      itemDOM.appendChild(itemTitle);
+      itemDOM.appendChild(itemContent);
+      itemDOM.addEventListener('click', this.selectSuggestItem(item));
+
+      itemsDOM.push(itemDOM);
+    });
+
+    return itemsDOM;
+  }
+
+  /**
+   * when user select suggest item
+   *
+   * @param item
+   */
+  selectSuggestItem(item) {
+    const that = this;
+
+    // console.log(item);
+    console.log('select1', item);
+
+    return function (event) {
+      event.stopPropagation();
+      event.preventDefault();
+      // 走创建的逻辑：
+      that.data = {
+        target: item.name,
+        target_id: item.eid,
+        target_type: 'essay',
+        link: item.eid,
+        meta: {
+          title: item.name,
+          description: item.summary,
+          image: {
+            url: item.images ? item.images[0] : '',
+          },
+        },
+      };
+      that.updateView();
+    };
+  }
+
+  /**
    * Activates link data fetching by url
+   *
+   * @param event
    */
   startFetching(event) {
     let url = this.nodes.input.textContent;
@@ -228,6 +487,7 @@ export default class LinkTool {
     }
 
     this.removeErrorStyle();
+    // 如果是外部url，调用后端url即系
     this.fetchLinkData(url);
   }
 
@@ -241,6 +501,7 @@ export default class LinkTool {
 
   /**
    * Select LinkTool input content by CMD+A
+   *
    * @param {KeyboardEvent} event
    */
   selectLinkUrl(event) {
@@ -262,12 +523,13 @@ export default class LinkTool {
 
   /**
    * Prepare link preview holder
-   * @return {HTMLElement}
+   *
+   * @returns {HTMLElement}
    */
   prepareLinkPreview() {
     const holder = this.make('a', this.CSS.linkContent, {
       target: '_blank',
-      rel: 'nofollow noindex noreferrer'
+      rel: 'nofollow noindex noreferrer',
     });
 
     this.nodes.linkImage = this.make('div', this.CSS.linkImage);
@@ -280,9 +542,16 @@ export default class LinkTool {
 
   /**
    * Compose link preview from fetched data
+   *
    * @param {metaData} meta - link meta data
    */
-  showLinkPreview({ image, title, description }) {
+  showLinkPreview({
+    image,
+    title,
+    description,
+    time,
+  }) {
+    console.log('showLinkPreview', this.nodes);
     this.nodes.container.appendChild(this.nodes.linkContent);
 
     if (image && image.url) {
@@ -302,6 +571,8 @@ export default class LinkTool {
 
     this.nodes.linkContent.classList.add(this.CSS.linkContentRendered);
     this.nodes.linkContent.setAttribute('href', this.data.link);
+    this.nodes.linkContent.setAttribute('data-target-type', this.data.target_type);
+    this.nodes.linkContent.addEventListener('click', this.anchorClick(), true);
     this.nodes.linkContent.appendChild(this.nodes.linkText);
 
     try {
@@ -309,6 +580,27 @@ export default class LinkTool {
     } catch (e) {
       this.nodes.linkText.textContent = this.data.link;
     }
+  }
+
+  /**
+   * bind a click event
+   */
+  anchorClick() {
+    const config = this.config;
+
+    return function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      const targetType = e.currentTarget.getAttribute('data-target-type');
+      const targetHref = e.currentTarget.getAttribute('href');
+
+      console.log(config.targetClick);
+      config.targetClick({
+        targetType,
+        targetHref,
+      }, e);
+      // console.log('anchorClick', data,);
+    };
   }
 
   /**
@@ -340,18 +632,23 @@ export default class LinkTool {
 
   /**
    * Sends to backend pasted url and receives link data
+   *
    * @param {string} url - link source url
    */
   async fetchLinkData(url) {
     this.showProgress();
-    this.data = { link: url };
+    this.data = {
+      link: url,
+    };
 
     try {
-      const { body } = await (ajax.get({
+      const {
+        body,
+      } = await (ajax.get({
         url: this.config.endpoint,
         data: {
-          url
-        }
+          url,
+        },
       }));
 
       this.onFetch(body);
@@ -362,20 +659,25 @@ export default class LinkTool {
 
   /**
    * Link data fetching callback
+   *
    * @param {UploadResponseFormat} response
    */
   onFetch(response) {
     if (!response || !response.success) {
       this.fetchingFailed(this.api.i18n.t('Couldn\'t get this link data, try the other one'));
+
       return;
     }
 
     const metaData = response.meta;
 
-    this.data = { meta: metaData };
+    this.data = {
+      meta: metaData,
+    };
 
     if (!metaData) {
       this.fetchingFailed(this.api.i18n.t('Wrong response format from the server'));
+
       return;
     }
 
@@ -386,7 +688,23 @@ export default class LinkTool {
   }
 
   /**
+   * @param rawid
+   */
+  uuid(rawid) {
+    rawid = rawid || 'xyxxxxxyx';
+    const formatter = rawid + '-xxxyxxx-xxxxxxxx';
+
+    return formatter.replace(/[xy]/g, function (c) {
+      var r = Math.random() * 16 | 0,
+          v = c == 'x' ? r : (r & 0x3 | 0x8);
+
+      return v.toString(16);
+    });
+  }
+
+  /**
    * Handle link fetching errors
+   *
    * @private
    *
    * @param {string} errorMessage
@@ -394,7 +712,7 @@ export default class LinkTool {
   fetchingFailed(errorMessage) {
     this.api.notifier.show({
       message: errorMessage,
-      style: 'error'
+      style: 'error',
     });
 
     this.applyErrorStyle();
@@ -402,13 +720,14 @@ export default class LinkTool {
 
   /**
    * Helper method for elements creation
+   *
    * @param tagName
    * @param classNames
    * @param attributes
-   * @return {HTMLElement}
+   * @returns {HTMLElement}
    */
   make(tagName, classNames = null, attributes = {}) {
-    let el = document.createElement(tagName);
+    const el = document.createElement(tagName);
 
     if (Array.isArray(classNames)) {
       el.classList.add(...classNames);
@@ -416,9 +735,10 @@ export default class LinkTool {
       el.classList.add(classNames);
     }
 
-    for (let attrName in attributes) {
+    for (const attrName in attributes) {
       el[attrName] = attributes[attrName];
     }
+    // console.log('make', attributes, el);
 
     return el;
   }

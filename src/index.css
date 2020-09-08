@@ -9,6 +9,9 @@
     white-space: nowrap;
     text-overflow: ellipsis;
     overflow: hidden;
+    &:focus{
+      border:1px solid #13c2c2;
+    }
 
     &-holder {
       position: relative;
@@ -59,6 +62,62 @@
 
     &--loaded {
       width: 100%;
+    }
+  }
+
+  &__suggests {
+    height: 0;
+    box-shadow: 1px 2px 4px rgba(0,0,0,0.1);
+    border-radius: 5px;
+    border: 1px solid #efefef;
+    position: absolute;
+    top:44px;
+    left:0px;
+    right:0px;
+    padding: 10px 0px;
+    z-index: 1024;
+    overflow-y: auto;
+    opacity: 0;
+    background: #ffffff;
+    
+    &--show {
+      opacity: 1;
+      height: 140px;
+      transition: height 0.3s;
+    }
+
+    &-item {
+      cursor: pointer;
+      padding:6px 16px;
+
+      &:hover {
+        background-color: #F5F7FA;
+        transition: background-color 0.5s;
+      }
+
+      &-title{
+        font-size: 14px;
+        font-weight: bolder;
+        color:#606266;
+        line-height: 1.5;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        pointer-events: none;
+        user-select: none;
+      }
+      &-content {
+        font-size: 12px;
+        color:#909399;
+        height: 18px;
+        line-height: 1.5;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        pointer-events: none;
+        user-select: none;
+
+      }
     }
   }
 

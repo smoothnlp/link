@@ -31,7 +31,7 @@ module.exports = {
     ]
   },
   output: {
-    path: path.join(__dirname, '/dist'),
+    path: path.join(__dirname, '../visual_lab/src/plugins/editorjs_smartlink/'),
     publicPath: '/',
     filename: 'bundle.js',
     library: 'LinkTool',
