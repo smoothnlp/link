@@ -139,7 +139,8 @@ export default class LinkTool {
     /**
      * If Tool already has data, render link preview, otherwise insert input
      */
-    if (Object.keys(this.data.meta).length) {
+
+    if (this.data.meta && Object.keys(this.data.meta).length) {
       this.nodes.container.appendChild(this.nodes.linkContent);
       this.showLinkPreview(this.data.meta);
     } else {
@@ -487,7 +488,10 @@ export default class LinkTool {
       event.stopPropagation();
       event.preventDefault();
       // 走创建的逻辑：
+      let description = untils.stripTags(item.summary);
 
+      description = description.length > 38 ? description.substring(0, 38) : description;
+      description = description ? (description + '...') : '';
       that.data = {
         target: item.name,
         target_id: item.eid,
@@ -495,7 +499,7 @@ export default class LinkTool {
         link: item.eid,
         meta: {
           title: item.name,
-          description: item.summary,
+          description,
           image: {
             url: item.images ? item.images[0] : '',
           },
@@ -569,10 +573,10 @@ export default class LinkTool {
     this.nodes.linkDescription = this.make('textarea', this.CSS.linkDescription, {
       placeholder: '请填写您的引用备注',
       rows: 3,
-      maxlength: 18,
+
     });
+    this.nodes.linkDescription.setAttribute('maxlength', 100);
     this.nodes.linkText = this.make('div', this.CSS.linkText);
-    // this.nodes.linkText.style.display = 'none';
 
     return holder;
   }
