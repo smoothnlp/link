@@ -89,7 +89,7 @@ export default class LinkTool {
       inputHolder: null,
       suggests: null,
       linkContent: null,
-      linkImage: null,
+      linkTextContent: null,
       linkTitle: null,
       linkDescription: null,
       linkText: null,
@@ -171,22 +171,22 @@ export default class LinkTool {
     const compared = this.compareData(data, this._data);
     const hasMeta = !!(data.meta && Object.keys(data.meta).length);
 
-    // 处理数据：
-    if (hasMeta) {
-      data.meta.title = untils.stripTags(data.meta.title);
-      data.meta.description = untils.stripTags(data.meta.description);
-    }
-
     this._data = Object.assign({}, {
       id: data.id || this._data.id,
       target: untils.stripTags(data.target) || this._data.target || '未命名',
       target_id: data.target_id || this._data.target_id,
       target_type: data.target_type || this._data.target_type,
       link: data.link || this._data.link,
-      meta: data.meta || this._data.meta,
     });
-    // 说明是新数据
+    // 处理数据：
+    if (hasMeta) {
+      // data.meta.title = data.meta.title ? untils.stripTags(data.meta.title) : '未命名';
+      // console.log('meta data', data.meta);
 
+      this._data.meta = data.meta;
+    }
+    // 说明是新数据
+    console.log('input3', this._data.meta);
     if (!this._data.id && this._data.target_id) {
       this._data.id = this.uuid();
       this.createLink(this._data);
@@ -261,11 +261,11 @@ export default class LinkTool {
    * @returns {LinkToolData} data
    */
   get data() {
-    if (this.nodes.linkDescription) {
-      if (this.nodes.linkDescription.textContent) {
-        this._data.meta.description = this.nodes.linkDescription.textContent;
-      }
-    }
+    // if (this.nodes.linkDescription) {
+    //   if (this.nodes.linkDescription.value) {
+    //     this._data.meta.description = this.nodes.linkDescription.value;
+    //   }
+    // }
 
     return this._data;
   }
@@ -288,8 +288,9 @@ export default class LinkTool {
       inputError: 'link-tool__input-holder--error',
       linkContent: 'link-tool__content',
       linkContentRendered: 'link-tool__content--rendered',
-      linkImage: 'link-tool__image',
+      linkTextContent: 'link-tool_text-content',
       linkTitle: 'link-tool__title',
+      linkImage: 'link-tool__image',
       linkDescription: 'link-tool__description',
       linkText: 'link-tool__anchor',
       progress: 'link-tool__progress',
@@ -563,10 +564,15 @@ export default class LinkTool {
     });
 
     this.nodes.linkImage = this.make('div', this.CSS.linkImage);
+    this.nodes.linkTextContent = this.make('div', this.CSS.linkTextContent);
     this.nodes.linkTitle = this.make('div', this.CSS.linkTitle);
-    this.nodes.linkDescription = this.make('p', this.CSS.linkDescription);
-    this.nodes.linkText = this.make('span', this.CSS.linkText);
-    this.nodes.linkText.style.display = 'none';
+    this.nodes.linkDescription = this.make('textarea', this.CSS.linkDescription, {
+      placeholder: '请填写您的引用备注',
+      rows: 3,
+      maxlength: 18,
+    });
+    this.nodes.linkText = this.make('div', this.CSS.linkText);
+    // this.nodes.linkText.style.display = 'none';
 
     return holder;
   }
@@ -594,26 +600,40 @@ export default class LinkTool {
       this.nodes.linkContent.appendChild(this.nodes.linkTitle);
     }
 
-    if (description) {
-      this.nodes.linkDescription.innerHTML = description;
-      this.nodes.linkDescription.contentEditable = true;
-      this.nodes.linkDescription.addEventListener('click', function (e) {
-        e.stopPropagation();
-        e.preventDefault();
-      });
+    this.nodes.linkTitle.textContent = this.data.target || '未命名';
+    this.nodes.linkTextContent.appendChild(this.nodes.linkTitle);
 
-      this.nodes.linkContent.appendChild(this.nodes.linkDescription);
-    }
+    this.nodes.linkDescription.innerHTML = description;
+    // this.nodes.linkDescription.contentEditable = true;
+    this.nodes.linkDescription.addEventListener('click', function (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    });
+    const that = this;
+
+    this.nodes.linkTextContent.appendChild(this.nodes.linkDescription);
+    this.nodes.linkContent.appendChild(this.nodes.linkTextContent);
+    this.nodes.linkDescription.addEventListener('change', function (e) {
+      const metaData = that.data.meta;
+
+      metaData.description = e.target.value;
+      that.data = {
+        meta: metaData,
+      };
+      that.updateView();
+      e.stopPropagation();
+      e.preventDefault();
+    });
 
     this.nodes.linkContent.classList.add(this.CSS.linkContentRendered);
     this.nodes.linkContent.setAttribute('href', this.data.link);
     this.nodes.linkContent.setAttribute('data-target-type', this.data.target_type);
     this.nodes.linkContent.setAttribute('data-target-id', this.data.target_id);
     this.nodes.linkContent.addEventListener('click', this.anchorClick());
-    this.nodes.linkContent.appendChild(this.nodes.linkText);
+    this.nodes.linkTextContent.appendChild(this.nodes.linkText);
 
     try {
-      this.nodes.linkText.textContent = (new URL(this.data.link)).hostname;
+      this.nodes.linkText.innerHTML = '<span class="el-icon-s-management"></span>' + '文档';
     } catch (e) {
       this.nodes.linkText.textContent = this.data.link;
     }

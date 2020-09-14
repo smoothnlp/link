@@ -105,6 +105,7 @@
         text-overflow: ellipsis;
         pointer-events: none;
         user-select: none;
+
       }
       &-content {
         font-size: 12px;
@@ -117,20 +118,23 @@
         pointer-events: none;
         user-select: none;
 
+
       }
     }
   }
 
   &__content {
     display: block;
-    padding: 25px;
+    padding: 20px;
     border-radius: 2px;
     box-shadow: 0 0 0 2px #fff;
     color: initial !important;
     text-decoration: none !important;
+    display: flex;
+    flex-direction: row-reverse;
     
-  box-sizing: border-box;
- 
+    /* box-sizing: border-box; */
+    
 
     &::after {
       content: "";
@@ -151,16 +155,19 @@
       }
     }
   }
+  &_text-content {
+    width: 100%;
+  }
 
   &__image {
     background-position: center center;
     background-repeat: no-repeat;
     background-size: cover;
-    margin: 0 0 0 30px;
-    width: 65px;
-    height: 65px;
-    border-radius: 3px;
-    float: right;
+    margin: 0 0 0 10px;
+    min-width: 84px;
+    height: 84px;
+    border-radius: 4px;
+   
   }
 
   &__title {
@@ -169,23 +176,44 @@
     line-height: 1.5em;
     margin: 0 0 10px 0;
     padding:0px 4px;
+    &:hover{
+      color:#13c2c2;
+    }
     + ^&__anchor {
       margin-top: 25px;
     }
   }
 
   &__description {
-    margin: 0 0 20px 0;
-    font-size: 15px;
-    line-height: 1.55em;
-    display: -webkit-box;
-    box-sizing: border-box;
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    width: 100%;
+    outline: none;
+    line-height: 1.75;
+    height: 48px;
+    resize: vertical;
+    border-radius: 4px;
     /* -webkit-line-clamp: 3;
     -webkit-box-orient: vertical; */
-    overflow: hidden;
+    cursor: text;
     min-height: 20px;
-    outline:none;
-    padding:4px;
+    text-align: left;
+    border:none;
+    color: #606266;
+    padding:2px;
+    
+   
+    &:hover {
+      background-color: #f2f6fc; 
+      border-radius: 4px;
+      
+    }
+
+    &:focus{
+      border: #13c2c2 solid 1px;
+      color: #303133;
+      background: #ffffff;
+    }
 
 
     &[contentEditable=true][data-placeholder]::before{
