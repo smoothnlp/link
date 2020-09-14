@@ -6,7 +6,7 @@
  * @returns
  */
 export function stripTags(content) {
-  console.log('strip tag', content);
+//   console.log('strip tag', content);
   if (!content) {
     return;
   }

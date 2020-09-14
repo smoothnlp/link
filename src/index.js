@@ -77,7 +77,8 @@ export default class LinkTool {
       targetClick: config.targetClick || null,
       suggester: config.suggester || null,
       suggests: config.suggests,
-
+      getCurrentDoc: config.getCurrentDoc,
+      docState: config.docState,
     };
 
     this.nodes = {
@@ -93,7 +94,20 @@ export default class LinkTool {
       linkDescription: null,
       linkText: null,
     };
-    console.log('constructor', data);
+    // console.log('constructor', data);
+    if (JSON.stringify(data) !== '{}') {
+      const currentDoc = config.getCurrentDoc();
+
+      console.log('currentDoc', currentDoc);
+      if (data.target_id === currentDoc.eid) {
+        config.message({
+          message: '文档不能自己嵌入自己,请选择其他文档',
+          type: 'error',
+        });
+
+        return;
+      }
+    }
     // 初始有值的情况
     this._data = JSON.stringify(data) !== '{}' ? data
       : {
@@ -247,6 +261,12 @@ export default class LinkTool {
    * @returns {LinkToolData} data
    */
   get data() {
+    if (this.nodes.linkDescription) {
+      if (this.nodes.linkDescription.textContent) {
+        this._data.meta.description = this.nodes.linkDescription.textContent;
+      }
+    }
+
     return this._data;
   }
 
@@ -398,6 +418,8 @@ export default class LinkTool {
 
       // console.log(res);
       if (res) {
+        const items = [];
+
         that.nodes.suggests.innerHTML = '';
         const itemsDOM = that.makeItems(res);
 
@@ -418,25 +440,32 @@ export default class LinkTool {
     total,
   }) {
     const itemsDOM = [];
+    const currentDoc = this.config.getCurrentDoc();
 
     items.forEach(item => {
-      const itemDOM = this.make('div', this.CSS.suggestsItem);
+      if (!item.name || !item.summary) {
+        return;
+      }
 
-      itemDOM.setAttribute('data-id', item.eid);
-      itemDOM.setAttribute('data-type', 'essay');
+      if (!(currentDoc && currentDoc.eid === item.eid)) {
+        const itemDOM = this.make('div', this.CSS.suggestsItem);
 
-      const itemTitle = this.make('div', this.CSS.suggestsItemTitle);
+        itemDOM.setAttribute('data-id', item.eid);
+        itemDOM.setAttribute('data-type', 'essay');
 
-      itemTitle.innerHTML = item.name;
-      const itemContent = this.make('div', this.CSS.suggestsItemContent);
+        const itemTitle = this.make('div', this.CSS.suggestsItemTitle);
 
-      itemContent.innerHTML = item.summary;
+        itemTitle.innerHTML = item.name;
+        const itemContent = this.make('div', this.CSS.suggestsItemContent);
 
-      itemDOM.appendChild(itemTitle);
-      itemDOM.appendChild(itemContent);
-      itemDOM.addEventListener('click', this.selectSuggestItem(item));
+        itemContent.innerHTML = item.summary;
 
-      itemsDOM.push(itemDOM);
+        itemDOM.appendChild(itemTitle);
+        itemDOM.appendChild(itemContent);
+        itemDOM.addEventListener('click', this.selectSuggestItem(item));
+
+        itemsDOM.push(itemDOM);
+      }
     });
 
     return itemsDOM;
@@ -457,6 +486,7 @@ export default class LinkTool {
       event.stopPropagation();
       event.preventDefault();
       // 走创建的逻辑：
+
       that.data = {
         target: item.name,
         target_id: item.eid,
@@ -536,6 +566,7 @@ export default class LinkTool {
     this.nodes.linkTitle = this.make('div', this.CSS.linkTitle);
     this.nodes.linkDescription = this.make('p', this.CSS.linkDescription);
     this.nodes.linkText = this.make('span', this.CSS.linkText);
+    this.nodes.linkText.style.display = 'none';
 
     return holder;
   }
@@ -547,7 +578,6 @@ export default class LinkTool {
    */
   showLinkPreview({
     image,
-    title,
     description,
     time,
   }) {
@@ -559,20 +589,27 @@ export default class LinkTool {
       this.nodes.linkContent.appendChild(this.nodes.linkImage);
     }
 
-    if (title) {
-      this.nodes.linkTitle.textContent = title;
+    if (this.data.target) {
+      this.nodes.linkTitle.textContent = this.data.target;
       this.nodes.linkContent.appendChild(this.nodes.linkTitle);
     }
 
     if (description) {
-      this.nodes.linkDescription.textContent = description;
+      this.nodes.linkDescription.innerHTML = description;
+      this.nodes.linkDescription.contentEditable = true;
+      this.nodes.linkDescription.addEventListener('click', function (e) {
+        e.stopPropagation();
+        e.preventDefault();
+      });
+
       this.nodes.linkContent.appendChild(this.nodes.linkDescription);
     }
 
     this.nodes.linkContent.classList.add(this.CSS.linkContentRendered);
     this.nodes.linkContent.setAttribute('href', this.data.link);
     this.nodes.linkContent.setAttribute('data-target-type', this.data.target_type);
-    this.nodes.linkContent.addEventListener('click', this.anchorClick(), true);
+    this.nodes.linkContent.setAttribute('data-target-id', this.data.target_id);
+    this.nodes.linkContent.addEventListener('click', this.anchorClick());
     this.nodes.linkContent.appendChild(this.nodes.linkText);
 
     try {
@@ -593,11 +630,12 @@ export default class LinkTool {
       e.stopPropagation();
       const targetType = e.currentTarget.getAttribute('data-target-type');
       const targetHref = e.currentTarget.getAttribute('href');
+      const targetId = e.currentTarget.getAttribute('data-target-id');
 
-      console.log(config.targetClick);
       config.targetClick({
         targetType,
         targetHref,
+        targetId,
       }, e);
       // console.log('anchorClick', data,);
     };
