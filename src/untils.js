@@ -12,7 +12,7 @@ export function stripTags(content) {
   }
   const text = typeof content !== 'object' ? content : content.text;
 
-  return text.replace(/<\/?.+?>/g, '').replace(/ /g, '');
+  return text.replace(/<\/?.+?>/g, '');
 }
 
 /**

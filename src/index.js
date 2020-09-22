@@ -77,8 +77,10 @@ export default class LinkTool {
       targetClick: config.targetClick || null,
       suggester: config.suggester || null,
       suggests: config.suggests,
+      setSuggestionSelectedData: config.setSuggestionSelectedData,
       getCurrentDoc: config.getCurrentDoc,
       docState: config.docState,
+
     };
 
     this.nodes = {
@@ -98,7 +100,7 @@ export default class LinkTool {
     if (JSON.stringify(data) !== '{}') {
       const currentDoc = config.getCurrentDoc();
 
-      console.log('currentDoc', currentDoc);
+      // console.log('currentDoc', currentDoc);
       if (data.target_id === currentDoc.eid) {
         config.message({
           message: '文档不能自己嵌入自己,请选择其他文档',
@@ -130,7 +132,7 @@ export default class LinkTool {
   render() {
     this.nodes.wrapper = this.make('div', this.CSS.baseClass);
     this.nodes.wrapper.setAttribute('data-block-id', this.data.id);
-    this.nodes.wrapper.setAttribute('data-block-type', 'link');
+    this.nodes.wrapper.setAttribute('data-block-type', 'link-block');
     this.nodes.container = this.make('div', this.CSS.container);
 
     this.nodes.inputHolder = this.makeInputHolder();
@@ -187,7 +189,7 @@ export default class LinkTool {
       this._data.meta = data.meta;
     }
     // 说明是新数据
-    console.log('input3', this._data.meta);
+    // console.log('input3', this._data.meta);
     if (!this._data.id && this._data.target_id) {
       this._data.id = this.uuid();
       this.createLink(this._data);
@@ -253,7 +255,7 @@ export default class LinkTool {
 
     const res = await this.config.updater(data, 'create');
 
-    console.log('createLink', res, data);
+    // console.log('createLink', res, data);
   }
 
   /**
@@ -481,30 +483,12 @@ export default class LinkTool {
   selectSuggestItem(item) {
     const that = this;
 
-    // console.log(item);
-    console.log('select1', item);
-
     return function (event) {
       event.stopPropagation();
       event.preventDefault();
-      // 走创建的逻辑：
-      let description = untils.stripTags(item.summary);
+      const data = that.config.setSuggestionSelectedData(item);
 
-      description = description.length > 38 ? description.substring(0, 38) : description;
-      description = description ? (description + '...') : '';
-      that.data = {
-        target: item.name,
-        target_id: item.eid,
-        target_type: 'essay',
-        link: item.eid,
-        meta: {
-          title: item.name,
-          description,
-          image: {
-            url: item.images ? item.images[0] : '',
-          },
-        },
-      };
+      that.data = data;
       that.updateView();
     };
   }
@@ -564,7 +548,7 @@ export default class LinkTool {
   prepareLinkPreview() {
     const holder = this.make('a', this.CSS.linkContent, {
       target: '_blank',
-      rel: 'nofollow noindex noreferrer',
+      rel: ' smartlink',
     });
 
     this.nodes.linkImage = this.make('div', this.CSS.linkImage);
