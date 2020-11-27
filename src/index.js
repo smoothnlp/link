@@ -1,3 +1,5 @@
+/* eslint-disable jsdoc/require-returns */
+/* eslint-disable camelcase */
 /**
  * @typedef {object} LinkToolData
  * @description Link Tool's input and output data format
@@ -16,7 +18,7 @@
 // eslint-disable-next-line
 import css from './index.css';
 import ToolboxIcon from './svg/toolbox.svg';
-import ajax from '@codexteam/ajax';
+
 // eslint-disable-next-line
 import polyfill from 'url-polyfill';
 import debounce from 'lodash.debounce';
@@ -80,6 +82,8 @@ export default class LinkTool {
       setSuggestionSelectedData: config.setSuggestionSelectedData,
       getCurrentDoc: config.getCurrentDoc,
       docState: config.docState,
+      getWebContent: config.getWebContent,
+      message: config.message,
 
     };
 
@@ -131,6 +135,7 @@ export default class LinkTool {
    */
   render() {
     this.nodes.wrapper = this.make('div', this.CSS.baseClass);
+    this.nodes.wrapper.setAttribute('id', this.data.id);
     this.nodes.wrapper.setAttribute('data-block-id', this.data.id);
     this.nodes.wrapper.setAttribute('data-block-type', 'link-block');
     this.nodes.container = this.make('div', this.CSS.container);
@@ -171,7 +176,7 @@ export default class LinkTool {
    * @param {LinkToolData} data
    */
   set data(data) {
-    const compared = this.compareData(data, this._data);
+    // const compared = this.compareData(data, this._data);
     const hasMeta = !!(data.meta && Object.keys(data.meta).length);
 
     this._data = Object.assign({}, {
@@ -231,6 +236,7 @@ export default class LinkTool {
    * @memberof LinkTool
    */
   updateView() {
+    this.nodes.wrapper.dataset.blockId = this.data.id;
     this.nodes.wrapper.id = this.data.id;
     if (this.data.meta && Object.keys(this.data.meta).length) {
       this.nodes.inputHolder.remove();
@@ -253,7 +259,7 @@ export default class LinkTool {
       return;
     }
 
-    const res = await this.config.updater(data, 'create');
+    await this.config.updater(data, 'create');
 
     // console.log('createLink', res, data);
   }
@@ -326,8 +332,7 @@ export default class LinkTool {
 
     this.nodes.input.addEventListener('paste', (event) => {
       // todo:外链解析
-      // this.startFetching(event);
-
+      this.startFetching(event);
     });
     this.nodes.input.addEventListener('paste', this.setSuggestItem());
     // todo：这里要改成输入连接，搜索文档接口获得数据文档数据，生成block
@@ -340,20 +345,20 @@ export default class LinkTool {
           event.preventDefault();
           event.stopPropagation();
           this.setSuggestItem()(event);
-          // this.startFetching(event);
+          this.startFetching(event);
           break;
         case A:
           if (cmdPressed) {
-            // event.preventDefault();
+            event.preventDefault();
             event.stopPropagation();
-            // this.selectLinkUrl(event);
+            this.selectLinkUrl(event);
           }
           break;
       }
-    });
+    }, true);
 
     this.nodes.input.addEventListener('keyup', debounce(this.setSuggestItem(), 2000));
-    this.nodes.input.addEventListener('focus', this.onInputFocus());
+    this.nodes.input.addEventListener('focus', this.onInputFocus(), true);
     this.nodes.input.addEventListener('blur', this.onInputBlur());
 
     this.nodes.suggests = this.make('div', this.CSS.suggests);
@@ -373,15 +378,18 @@ export default class LinkTool {
     const that = this;
 
     return function (event) {
+      event.stopPropagation();
       that.nodes.suggests.classList.add(that.CSS.suggestsShow);
       // 如果是空的话，那么调取所
       if (that.nodes.input.textContent.trim().length === 0) {
         // 加载默认数据
-        // console.log('default suggests', that.config.suggests);
+        const defaultSuggests = that.config.suggests;
+
+        Array.isArray(defaultSuggests) && defaultSuggests.reverse();
         if (that.config.suggests && that.config.suggests.length > 0) {
           that.nodes.suggests.innerHTML = '';
           const itemsDOM = that.makeItems({
-            items: that.config.suggests,
+            items: defaultSuggests,
           });
 
           itemsDOM.forEach(item => {
@@ -416,14 +424,12 @@ export default class LinkTool {
   setSuggestItem(event) {
     const that = this;
 
-    return async function (event) {
+    return async function () {
       const value = that.nodes.input.textContent;
       const res = await that.config.suggester(value);
 
       // console.log(res);
       if (res) {
-        const items = [];
-
         that.nodes.suggests.innerHTML = '';
         const itemsDOM = that.makeItems(res);
 
@@ -446,11 +452,8 @@ export default class LinkTool {
     const itemsDOM = [];
     const currentDoc = this.config.getCurrentDoc();
 
-    items.forEach(item => {
-      if (!item.name || !item.summary) {
-        return;
-      }
-
+    // console.log('makeItems', currentDoc, items);
+    items.forEach((item, index) => {
       if (!(currentDoc && currentDoc.eid === item.eid)) {
         const itemDOM = this.make('div', this.CSS.suggestsItem);
 
@@ -459,10 +462,10 @@ export default class LinkTool {
 
         const itemTitle = this.make('div', this.CSS.suggestsItemTitle);
 
-        itemTitle.innerHTML = item.name;
+        itemTitle.innerHTML = item.name || '未命名';
         const itemContent = this.make('div', this.CSS.suggestsItemContent);
 
-        itemContent.innerHTML = item.summary;
+        itemContent.innerHTML = item.summary || '还为开始书写';
 
         itemDOM.appendChild(itemTitle);
         itemDOM.appendChild(itemContent);
@@ -620,11 +623,26 @@ export default class LinkTool {
     this.nodes.linkContent.addEventListener('click', this.anchorClick());
     this.nodes.linkTextContent.appendChild(this.nodes.linkText);
 
-    try {
-      this.nodes.linkText.innerHTML = '<span class="el-icon-s-management"></span>' + '文档';
-    } catch (e) {
-      this.nodes.linkText.textContent = this.data.link;
+    let showType;
+
+    switch (this.data.target_type) {
+      case 'essay':
+        showType = '<span class="el-icon-s-management"></span>' + '文档';
+        break;
+      case 'webs':
+        showType = '<span class="iconfont iconzixun"></span>' + '资讯';
+        break;
+      default:
+        showType = this.data.link;
+        break;
     }
+
+    this.nodes.linkText.innerHTML = showType;
+    //   this.nodes.linkText.innerHTML = '<span class="el-icon-s-management"></span>' + '文档';
+
+    // } catch (e) {
+    //   this.nodes.linkText.textContent =
+    // }
   }
 
   /**
@@ -654,6 +672,7 @@ export default class LinkTool {
    */
   showProgress() {
     this.nodes.progress.classList.add(this.CSS.progressLoading);
+    // console.log('progress');
   }
 
   /**
@@ -683,54 +702,41 @@ export default class LinkTool {
    */
   async fetchLinkData(url) {
     this.showProgress();
-    this.data = {
-      link: url,
-    };
 
-    try {
-      const {
-        body,
-      } = await (ajax.get({
-        url: this.config.endpoint,
-        data: {
-          url,
-        },
-      }));
+    const content = await this.config.getWebContent(url);
 
-      this.onFetch(body);
-    } catch (error) {
-      this.fetchingFailed(this.api.i18n.t('Couldn\'t fetch the link data'));
-    }
-  }
-
-  /**
-   * Link data fetching callback
-   *
-   * @param {UploadResponseFormat} response
-   */
-  onFetch(response) {
-    if (!response || !response.success) {
-      this.fetchingFailed(this.api.i18n.t('Couldn\'t get this link data, try the other one'));
-
-      return;
+    if (content) {
+      // console.log('fetchLinkData', content);
+      this.data = this.config.setSuggestionSelectedData(content, 'webs');
+      this.hideProgress().then(() => {
+        // this.createLink(this.data);
+        this.nodes.inputHolder.remove();
+        this.updateView();
+      });
+    } else {
+      this.config.message({
+        message: '此链接无法导入',
+        type: 'error',
+      });
+      this.applyErrorStyle();
     }
 
-    const metaData = response.meta;
+    // console.log('fetchLinkData', content);
 
-    this.data = {
-      meta: metaData,
-    };
+    // try {
+    //   const {
+    //     body,
+    //   } = await (ajax.get({
+    //     url: this.config.endpoint,
+    //     data: {
+    //       url,
+    //     },
+    //   }));
 
-    if (!metaData) {
-      this.fetchingFailed(this.api.i18n.t('Wrong response format from the server'));
-
-      return;
-    }
-
-    this.hideProgress().then(() => {
-      this.nodes.inputHolder.remove();
-      this.showLinkPreview(metaData);
-    });
+    //   this.onFetch(body);
+    // } catch (error) {
+    //   this.fetchingFailed(this.api.i18n.t('Couldn\'t fetch the link data'));
+    // }
   }
 
   /**
@@ -746,22 +752,6 @@ export default class LinkTool {
 
       return v.toString(16);
     });
-  }
-
-  /**
-   * Handle link fetching errors
-   *
-   * @private
-   *
-   * @param {string} errorMessage
-   */
-  fetchingFailed(errorMessage) {
-    this.api.notifier.show({
-      message: errorMessage,
-      style: 'error',
-    });
-
-    this.applyErrorStyle();
   }
 
   /**
