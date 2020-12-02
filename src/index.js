@@ -49,6 +49,15 @@ export default class LinkTool {
   }
 
   /**
+   * @param {LinkToolData} data - previously saved data
+   * @param {config} config - user config for Tool
+   * @param {object} api - Editor.js API
+   */
+  static get isReadOnlySupported() {
+    return true;
+  }
+
+  /**
    * Allow to press Enter inside the LinkTool input
    *
    * @returns {boolean}
@@ -67,9 +76,10 @@ export default class LinkTool {
     data,
     config,
     api,
+    readOnly,
   }) {
     this.api = api;
-
+    this.readOnly = readOnly;
     /**
      * Tool's initial config
      */
@@ -325,42 +335,43 @@ export default class LinkTool {
 
     this.nodes.progress = this.make('label', this.CSS.progress);
     this.nodes.input = this.make('div', [this.CSS.input, this.CSS.inputEl], {
-      contentEditable: true,
+      contentEditable: !this.readOnly,
     });
 
-    this.nodes.input.dataset.placeholder = this.api.i18n.t('Type Some Text To Link');
+    if (!this.readOnly) {
+      this.nodes.input.dataset.placeholder = this.api.i18n.t('Type Some Text To Link');
 
-    this.nodes.input.addEventListener('paste', (event) => {
-      // todo:外链解析
-      this.startFetching(event);
-    });
-    this.nodes.input.addEventListener('paste', this.setSuggestItem());
-    // todo：这里要改成输入连接，搜索文档接口获得数据文档数据，生成block
-    this.nodes.input.addEventListener('keydown', (event) => {
-      const [ENTER, A] = [13, 65];
-      const cmdPressed = event.ctrlKey || event.metaKey;
+      this.nodes.input.addEventListener('paste', (event) => {
+        // todo:外链解析
+        this.startFetching(event);
+      });
+      this.nodes.input.addEventListener('paste', this.setSuggestItem());
+      // todo：这里要改成输入连接，搜索文档接口获得数据文档数据，生成block
+      this.nodes.input.addEventListener('keydown', (event) => {
+        const [ENTER, A] = [13, 65];
+        const cmdPressed = event.ctrlKey || event.metaKey;
 
-      switch (event.keyCode) {
-        case ENTER:
-          event.preventDefault();
-          event.stopPropagation();
-          this.setSuggestItem()(event);
-          this.startFetching(event);
-          break;
-        case A:
-          if (cmdPressed) {
+        switch (event.keyCode) {
+          case ENTER:
             event.preventDefault();
             event.stopPropagation();
-            this.selectLinkUrl(event);
-          }
-          break;
-      }
-    }, true);
+            this.setSuggestItem()(event);
+            this.startFetching(event);
+            break;
+          case A:
+            if (cmdPressed) {
+              event.preventDefault();
+              event.stopPropagation();
+              this.selectLinkUrl(event);
+            }
+            break;
+        }
+      }, true);
 
-    this.nodes.input.addEventListener('keyup', debounce(this.setSuggestItem(), 2000));
-    this.nodes.input.addEventListener('focus', this.onInputFocus(), true);
-    this.nodes.input.addEventListener('blur', this.onInputBlur());
-
+      this.nodes.input.addEventListener('keyup', debounce(this.setSuggestItem(), 2000));
+      this.nodes.input.addEventListener('focus', this.onInputFocus(), true);
+      this.nodes.input.addEventListener('blur', this.onInputBlur());
+    }
     this.nodes.suggests = this.make('div', this.CSS.suggests);
     inputHolder.appendChild(this.nodes.progress);
     inputHolder.appendChild(this.nodes.input);
