@@ -394,8 +394,11 @@ export default class LinkTool {
       // 如果是空的话，那么调取所
       if (that.nodes.input.textContent.trim().length === 0) {
         // 加载默认数据
-        const defaultSuggests = that.config.suggests;
+        let defaultSuggests = that.config.suggests || [];
 
+        // console.log('defaultSuggests 1', defaultSuggests);
+        defaultSuggests = defaultSuggests.filter(doc => doc.is_trash === false);
+        // console.log('defaultSuggests 1', defaultSuggests);
         Array.isArray(defaultSuggests) && defaultSuggests.reverse();
         if (that.config.suggests && that.config.suggests.length > 0) {
           that.nodes.suggests.innerHTML = '';
