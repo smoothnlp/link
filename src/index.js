@@ -646,6 +646,15 @@ export default class LinkTool {
       case 'webs':
         showType = '<span class="iconfont iconzixun"></span>' + '资讯';
         break;
+      case 'pdf':
+        showType = '<span class="iconfont iconpdf"></span>' + 'PDF';
+        break;
+      case 'xlsx':
+        showType = '<span class="iconfont iconexcel"></span>' + 'Excel';
+        break;
+      case 'pptx':
+        showType = '<span class="iconfont iconppt"></span>' + 'PPT';
+        break;
       default:
         showType = this.data.link;
         break;
