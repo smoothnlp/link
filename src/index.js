@@ -641,7 +641,7 @@ export default class LinkTool {
 
     switch (this.data.target_type) {
       case 'essay':
-        showType = '<span class="el-icon-s-management"></span>' + '文档';
+        showType = '<span class="iconfont icondoc"></span>' + '互链文档';
         break;
       case 'webs':
         showType = '<span class="iconfont iconzixun"></span>' + '资讯';
