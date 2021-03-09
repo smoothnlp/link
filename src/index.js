@@ -269,7 +269,7 @@ export default class LinkTool {
       return;
     }
 
-    await this.config.updater(data, 'create');
+    this.config.updater(data, 'create');
 
     // console.log('createLink', res, data);
   }
@@ -644,7 +644,7 @@ export default class LinkTool {
         showType = '<span class="iconfont icondoc"></span>' + '互链文档';
         break;
       case 'webs':
-        showType = '<span class="iconfont iconzixun"></span>' + '资讯';
+        showType = '<span class="iconfont iconwebs-fill"></span>' + '网页';
         break;
       case 'pdf':
         showType = '<span class="iconfont iconpdf"></span>' + 'PDF';
