@@ -31,7 +31,7 @@ module.exports = {
     ]
   },
   output: {
-    path: path.join(__dirname, '../visual_lab/src/plugins/editorjs_smartlink/'),
+    path:  '/Users/victor/Desktop/SmoothNLP_Work/swrite_frontend/src/plugins/editorjs_smartlink/',
     publicPath: '/',
     filename: 'bundle.js',
     library: 'LinkTool',

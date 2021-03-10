@@ -571,12 +571,11 @@ export default class LinkTool {
     this.nodes.linkImage = this.make('div', this.CSS.linkImage);
     this.nodes.linkTextContent = this.make('div', this.CSS.linkTextContent);
     this.nodes.linkTitle = this.make('div', this.CSS.linkTitle);
-    this.nodes.linkDescription = this.make('textarea', this.CSS.linkDescription, {
-      placeholder: '请填写您的引用备注',
-      rows: 3,
-
-    });
-    this.nodes.linkDescription.setAttribute('maxlength', 100);
+    // this.nodes.linkDescription = this.make('textarea', this.CSS.linkDescription, {
+    //   placeholder: '请填写您的引用备注',
+    //   rows: 3,
+    // });
+    // this.nodes.linkDescription.setAttribute('maxlength', 100);
     this.nodes.linkText = this.make('div', this.CSS.linkText);
 
     return holder;
@@ -608,52 +607,37 @@ export default class LinkTool {
     this.nodes.linkTitle.textContent = this.data.target || '未命名';
     this.nodes.linkTextContent.appendChild(this.nodes.linkTitle);
 
-    this.nodes.linkDescription.innerHTML = description;
-    // this.nodes.linkDescription.contentEditable = true;
-    this.nodes.linkDescription.addEventListener('click', function (e) {
-      e.stopPropagation();
-      e.preventDefault();
-    });
     const that = this;
 
-    this.nodes.linkTextContent.appendChild(this.nodes.linkDescription);
+    // this.nodes.linkTextContent.appendChild(this.nodes.linkDescription);
     this.nodes.linkContent.appendChild(this.nodes.linkTextContent);
-    this.nodes.linkDescription.addEventListener('change', function (e) {
-      const metaData = that.data.meta;
-
-      metaData.description = e.target.value;
-      that.data = {
-        meta: metaData,
-      };
-      that.updateView();
-      e.stopPropagation();
-      e.preventDefault();
-    });
 
     this.nodes.linkContent.classList.add(this.CSS.linkContentRendered);
     this.nodes.linkContent.setAttribute('href', this.data.link);
     this.nodes.linkContent.setAttribute('data-target-type', this.data.target_type);
     this.nodes.linkContent.setAttribute('data-target-id', this.data.target_id);
     this.nodes.linkContent.addEventListener('click', this.anchorClick());
-    this.nodes.linkTextContent.appendChild(this.nodes.linkText);
+    // this.nodes.linkTextContent.appendChild(this.nodes.linkText);
+
+    this.nodes.linkContent.appendChild(this.nodes.linkText);
 
     let showType;
 
     switch (this.data.target_type) {
       case 'essay':
-        showType = '<span class="iconfont icondoc"></span>' + '互链文档';
+        showType = '<span class="iconfont icondoc"></span>' + '';
         break;
       case 'webs':
-        showType = '<span class="iconfont iconwebs-fill"></span>' + '网页';
+        showType = '<span class="iconfont iconwebs-fill"></span>' + '';
         break;
       case 'pdf':
-        showType = '<span class="iconfont iconpdf"></span>' + 'PDF';
+        showType = '<span class="iconfont iconpdf"></span>' + '';
         break;
       case 'xlsx':
-        showType = '<span class="iconfont iconexcel"></span>' + 'Excel';
+        showType = '<span class="iconfont iconexcel"></span>' + '';
         break;
       case 'pptx':
-        showType = '<span class="iconfont iconppt"></span>' + 'PPT';
+        showType = '<span class="iconfont iconppt"></span>' + '';
         break;
       default:
         showType = this.data.link;
@@ -661,6 +645,7 @@ export default class LinkTool {
     }
 
     this.nodes.linkText.innerHTML = showType;
+
     //   this.nodes.linkText.innerHTML = '<span class="el-icon-s-management"></span>' + '文档';
 
     // } catch (e) {
