@@ -1,6 +1,6 @@
 .link-tool {
   position: relative;
-  
+
   &__input {
     padding-left: 38px;
     background-image: url("data:image/svg+xml,%3Csvg width='13' height='14' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M8.567 13.629c.728.464 1.581.65 2.41.558l-.873.873A3.722 3.722 0 1 1 4.84 9.794L6.694 7.94a3.722 3.722 0 0 1 5.256-.008L10.484 9.4a5.209 5.209 0 0 1-.017.016 1.625 1.625 0 0 0-2.29.009l-1.854 1.854a1.626 1.626 0 0 0 2.244 2.35zm2.766-7.358a3.722 3.722 0 0 0-2.41-.558l.873-.873a3.722 3.722 0 1 1 5.264 5.266l-1.854 1.854a3.722 3.722 0 0 1-5.256.008L9.416 10.5a5.2 5.2 0 0 1 .017-.016 1.625 1.625 0 0 0 2.29-.009l1.854-1.854a1.626 1.626 0 0 0-2.244-2.35z' fill='rgba(0, 0, 0, 0.6)' transform='translate(-3.667 -2.7)'/%3E%3C/svg%3E%0A");
@@ -10,8 +10,8 @@
     text-overflow: ellipsis;
     overflow: hidden;
 
-    &:focus{
-      border:1px solid #13c2c2;
+    &:focus {
+      border: 1px solid #13c2c2;
     }
 
     &-holder {
@@ -23,12 +23,12 @@
           background-color: #fff3f6;
           border-color: #f3e0e0;
           color: #a95a5a;
-          box-shadow: inset 0 1px 3px 0 rgba(146, 62, 62, .05);
+          box-shadow: inset 0 1px 3px 0 rgba(146, 62, 62, 0.05);
         }
       }
     }
 
-    &[contentEditable=true][data-placeholder]::before{
+    &[contentEditable="true"][data-placeholder]::before {
       position: absolute;
       content: attr(data-placeholder);
       color: #707684;
@@ -36,15 +36,14 @@
       opacity: 0;
     }
 
-    &[contentEditable=true][data-placeholder]:empty {
-
+    &[contentEditable="true"][data-placeholder]:empty {
       &::before {
         opacity: 1;
       }
 
       &:focus::before {
-         opacity: 0;
-       }
+        opacity: 0;
+      }
     }
   }
 
@@ -61,7 +60,7 @@
       animation: progress 500ms ease-in;
       animation-fill-mode: forwards;
     }
-    
+
     &--loaded {
       width: 100%;
     }
@@ -69,13 +68,13 @@
 
   &__suggests {
     height: 0;
-    box-shadow: 1px 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.1);
     border-radius: 5px;
     border: 1px solid #efefef;
     position: absolute;
-    top:44px;
-    left:0px;
-    right:0px;
+    top: 44px;
+    left: 0px;
+    right: 0px;
     padding: 10px 0px;
     z-index: 1;
     overflow-y: auto;
@@ -92,28 +91,27 @@
 
     &-item {
       cursor: pointer;
-      padding:6px 16px;
+      padding: 6px 16px;
 
       &:hover {
-        background-color: #F5F7FA;
+        background-color: #f5f7fa;
         transition: background-color 0.5s;
       }
 
-      &-title{
+      &-title {
         font-size: 14px;
         font-weight: bolder;
-        color:#606266;
+        color: #606266;
         line-height: 1.5;
         overflow: hidden;
         white-space: nowrap;
         text-overflow: ellipsis;
         pointer-events: none;
         user-select: none;
-
       }
       &-content {
         font-size: 12px;
-        color:#909399;
+        color: #909399;
         height: 18px;
         line-height: 1.5;
         overflow: hidden;
@@ -121,24 +119,21 @@
         text-overflow: ellipsis;
         pointer-events: none;
         user-select: none;
-
-
       }
     }
   }
 
   &__content {
-    display: block;
-    padding: 20px;
+    padding: 12px;
     border-radius: 2px;
     box-shadow: 0 0 0 2px #fff;
     color: initial !important;
     text-decoration: none !important;
     display: flex;
     flex-direction: row-reverse;
-    
+    border-bottom:1px solid rgba(201, 201, 204, 0.48)!important;
+
     /* box-sizing: border-box; */
-    
 
     &::after {
       content: "";
@@ -147,15 +142,17 @@
     }
 
     &--rendered {
+      display: flex;
+      align-items: center;
       background: #fff;
       border: 1px solid rgba(201, 201, 204, 0.48);
-      box-shadow: 0 1px 3px rgba(0,0,0, .1);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
       border-radius: 6px;
       will-change: filter;
       animation: link-in 450ms 1 cubic-bezier(0.215, 0.61, 0.355, 1);
 
       &:hover {
-        box-shadow: 0 0 3px rgba(0,0,0, .16);
+        box-shadow: 0 0 3px rgba(0, 0, 0, 0.16);
       }
     }
   }
@@ -171,17 +168,18 @@
     min-width: 84px;
     height: 84px;
     border-radius: 4px;
-   
   }
 
   &__title {
-    font-size: 17px;
-    font-weight: 600;
-    line-height: 1.5em;
-    margin: 0 0 10px 0;
-    padding:0px 4px;
-    &:hover{
-      color:#13c2c2;
+    font-size: 14px;
+    font-weight: 400;
+    
+    line-height: 24px;
+    margin: 0;
+    padding: 0px 4px;
+    &:hover {
+      color: #13c2c2;
+      font-weight:500;
     }
     + ^&__anchor {
       margin-top: 25px;
@@ -202,25 +200,22 @@
     cursor: text;
     min-height: 20px;
     text-align: left;
-    border:none;
+    border: none;
     color: #606266;
-    padding:2px;
-    
-  
+    padding: 2px;
+
     &:hover {
-      background-color: #f2f6fc; 
+      background-color: #f2f6fc;
       border-radius: 4px;
-      
     }
 
-    &:focus{
+    &:focus {
       border: #13c2c2 solid 1px;
       color: #303133;
       background: #ffffff;
     }
 
-
-    &[contentEditable=true][data-placeholder]::before{
+    &[contentEditable="true"][data-placeholder]::before {
       position: absolute;
       content: attr(data-placeholder);
       color: #707684;
@@ -228,36 +223,53 @@
       opacity: 0;
     }
 
-    &[contentEditable=true][data-placeholder]:empty {
-
+    &[contentEditable="true"][data-placeholder]:empty {
       &::before {
         opacity: 1;
       }
 
       &:focus::before {
-         opacity: 0;
-       }
+        opacity: 0;
+      }
     }
 
-    &[contenteditable=true]{
-      
-      &:hover{
-        
+    &[contenteditable="true"] {
+      &:hover {
         border: 1px solid #13c2c2;
-        border-radius:4px;
+        border-radius: 4px;
       }
       cursor: text;
     }
-
   }
 
   &__anchor {
-    display: block;
-    font-size: 15px;
-    line-height: 1em;
-    color: #888 !important;
+    display: flex;
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
+    justify-content: center;
+    algin-itmes: center;
     border: 0 !important;
     padding: 0 !important;
+    .iconfont {
+      font-size: 20px !important;
+      &.icondoc{
+        color:#13C2C2;
+      }
+      &.iconwebs-fill {
+        color: #4fc08d;
+      }
+      &.iconpdf {
+        color: #D8102C;
+      }
+      &.iconexcel {
+        color: #0A9772;
+      }
+      &.iconppt {
+        color: #0a9772;
+      }
+  
+    }
   }
 }
 
@@ -283,5 +295,3 @@
 .codex-editor--narrow .link-tool__image {
   display: none;
 }
-
-

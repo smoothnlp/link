@@ -568,7 +568,7 @@ export default class LinkTool {
       rel: ' smartlink',
     });
 
-    this.nodes.linkImage = this.make('div', this.CSS.linkImage);
+    // this.nodes.linkImage = this.make('div', this.CSS.linkImage);
     this.nodes.linkTextContent = this.make('div', this.CSS.linkTextContent);
     this.nodes.linkTitle = this.make('div', this.CSS.linkTitle);
     // this.nodes.linkDescription = this.make('textarea', this.CSS.linkDescription, {
@@ -594,10 +594,10 @@ export default class LinkTool {
     console.log('showLinkPreview', this.nodes);
     this.nodes.container.appendChild(this.nodes.linkContent);
 
-    if (image && image.url) {
-      this.nodes.linkImage.style.backgroundImage = 'url(' + image.url + ')';
-      this.nodes.linkContent.appendChild(this.nodes.linkImage);
-    }
+    // if (image && image.url) {
+    //   this.nodes.linkImage.style.backgroundImage = 'url(' + image.url + ')';
+    //   this.nodes.linkContent.appendChild(this.nodes.linkImage);
+    // }
 
     if (this.data.target) {
       this.nodes.linkTitle.textContent = this.data.target;
@@ -606,8 +606,6 @@ export default class LinkTool {
 
     this.nodes.linkTitle.textContent = this.data.target || '未命名';
     this.nodes.linkTextContent.appendChild(this.nodes.linkTitle);
-
-    const that = this;
 
     // this.nodes.linkTextContent.appendChild(this.nodes.linkDescription);
     this.nodes.linkContent.appendChild(this.nodes.linkTextContent);
