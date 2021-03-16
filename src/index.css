@@ -251,7 +251,7 @@
     algin-itmes: center;
     border: 0 !important;
     padding: 0 !important;
-    .iconfont {
+    /* .iconfont {
       font-size: 20px !important;
       &.icondoc{
         color:#13C2C2;
@@ -268,8 +268,7 @@
       &.iconppt {
         color: #0a9772;
       }
-  
-    }
+    } */
   }
 }
 

@@ -94,6 +94,7 @@ export default class LinkTool {
       docState: config.docState,
       getWebContent: config.getWebContent,
       message: config.message,
+      getLinkIconHTML: config.getLinkIconHTML,
 
     };
 
@@ -125,14 +126,13 @@ export default class LinkTool {
       }
     }
     // 初始有值的情况
-    this._data = JSON.stringify(data) !== '{}' ? data
-      : {
-        target: '',
-        target_id: '',
-        target_type: '',
-        link: '',
-        meta: {},
-      };
+    this._data = JSON.stringify(data) !== '{}' ? data : {
+      target: '',
+      target_id: '',
+      target_type: '',
+      link: '',
+      meta: {},
+    };
     this.data = data;
   }
 
@@ -619,36 +619,13 @@ export default class LinkTool {
 
     this.nodes.linkContent.appendChild(this.nodes.linkText);
 
-    let showType;
+    let showType = this.config.getLinkIconHTML(this.data.target_type);
 
-    switch (this.data.target_type) {
-      case 'essay':
-        showType = '<span class="iconfont icondoc"></span>' + '';
-        break;
-      case 'webs':
-        showType = '<span class="iconfont iconwebs-fill"></span>' + '';
-        break;
-      case 'pdf':
-        showType = '<span class="iconfont iconpdf"></span>' + '';
-        break;
-      case 'xlsx':
-        showType = '<span class="iconfont iconexcel"></span>' + '';
-        break;
-      case 'pptx':
-        showType = '<span class="iconfont iconppt"></span>' + '';
-        break;
-      default:
-        showType = this.data.link;
-        break;
+    if (!showType) {
+      showType = '<span class="el-icon-s-management"></span>' + '文档';
     }
 
     this.nodes.linkText.innerHTML = showType;
-
-    //   this.nodes.linkText.innerHTML = '<span class="el-icon-s-management"></span>' + '文档';
-
-    // } catch (e) {
-    //   this.nodes.linkText.textContent =
-    // }
   }
 
   /**
