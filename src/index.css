@@ -92,29 +92,51 @@
     &-item {
       cursor: pointer;
       padding: 6px 16px;
-      &:hover{
-        background-color: #EBEEF5;
+      &:hover {
+        background-color: #f5f7fa;
         transition: background-color 0.5s;
       }
       &.actived {
-        background-color: #f5f7fa;
+        background-color: #ebeef5;
         transition: background-color 0.5s;
       }
 
       &-title {
-        font-size: 14px;
-        font-weight: bolder;
-        color: #606266;
-        line-height: 1.5;
         overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
+        width: 100%;
         pointer-events: none;
         user-select: none;
+        display: flex;
+        align-items: center;
+        justify-content: between;
+        
+        .iconfont {
+          font-size: 22px !important;
+        }
+        .title {
+          padding-left: 4px;
+          padding-right: 4px;
+          font-size: 15px;
+          font-weight: 500;
+          color: #303133;
+          overflow: hidden;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+          width: 100%;
+          line-height: 1.5;
+        }
+        .time {
+          font-size: 14px;
+          width: 80px;
+          text-align: right;
+          color: #909399;
+        }
       }
       &-content {
+        margin-top: 4px;
+        padding-left: 4px;
         font-size: 12px;
-        color: #909399;
+        color: #606266;
         height: 18px;
         line-height: 1.5;
         overflow: hidden;
@@ -122,6 +144,7 @@
         text-overflow: ellipsis;
         pointer-events: none;
         user-select: none;
+        width:100%;
       }
     }
   }
@@ -134,7 +157,7 @@
     text-decoration: none !important;
     display: flex;
     flex-direction: row-reverse;
-    border-bottom:1px solid rgba(201, 201, 204, 0.48)!important;
+    border-bottom: 1px solid rgba(201, 201, 204, 0.48) !important;
 
     /* box-sizing: border-box; */
 
@@ -176,13 +199,13 @@
   &__title {
     font-size: 14px;
     font-weight: 400;
-    
+
     line-height: 24px;
     margin: 0;
     padding: 0px 4px;
     &:hover {
       color: #13c2c2;
-      font-weight:500;
+      font-weight: 500;
     }
     + ^&__anchor {
       margin-top: 25px;

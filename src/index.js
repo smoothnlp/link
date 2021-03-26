@@ -95,6 +95,8 @@ export default class LinkTool {
       getWebContent: config.getWebContent,
       message: config.message,
       getLinkIconHTML: config.getLinkIconHTML,
+      getFileTypeName: config.getFileTypeName,
+      getFormateTime: config.getFormateTime,
 
     };
 
@@ -320,6 +322,8 @@ export default class LinkTool {
       suggestsLoaded: 'link-tool__suggests--loaded',
       suggestsItem: 'link-tool__suggests-item',
       suggestsItemTitle: 'link-tool__suggests-item-title',
+      suggestsItemTitleText: 'title',
+      suggestsItemTitleTime: 'time',
       suggestsItemContent: 'link-tool__suggests-item-content',
     };
   }
@@ -347,15 +351,13 @@ export default class LinkTool {
       this.nodes.input.addEventListener('paste', this.setSuggestItem());
       // todo：这里要改成输入连接，搜索文档接口获得数据文档数据，生成block
       this.api.listeners.on(this.nodes.input, 'keydown', (event) => {
-        const [ENTER, A, DOWN, UP] = [13, 65, 40, 38];
+        const [ENTER, A, DOWN, UP, TAB] = [13, 65, 40, 38, 9];
         const cmdPressed = event.ctrlKey || event.metaKey;
+        // console.log('makeInputHolder', event);
 
         switch (event.keyCode) {
           case ENTER:
-            event.preventDefault();
-            event.stopPropagation();
             this.__enterKeyHandler(event);
-
             break;
           case A:
             if (cmdPressed) {
@@ -364,16 +366,14 @@ export default class LinkTool {
               this.selectLinkUrl(event);
             }
             break;
+          case TAB:
+            this.__inputUpAndDownKeyHandler(event, true);
+            break;
           case DOWN:
             this.__inputUpAndDownKeyHandler(event, true);
-            // console.log('keydown 2', DOWN);
-            // event.preventDefault();
-            // event.stopPropagation();
             break;
           case UP:
             this.__inputUpAndDownKeyHandler(event, false);
-            event.preventDefault();
-            event.stopPropagation();
             break;
         }
       });
@@ -432,7 +432,10 @@ export default class LinkTool {
    * @memberof LinkTool
    */
   __enterKeyHandler(event) {
-    console.log('__enterKeyHandler', event);
+    // console.log('__enterKeyHandler', event);
+    event.preventDefault();
+    event.stopPropagation();
+
     const activeEle = this.nodes.suggests.querySelector('.actived');
 
     if (activeEle) {
@@ -519,7 +522,10 @@ export default class LinkTool {
           that.nodes.suggests.innerHTML = '';
           const itemsDOM = that.makeItems(res);
 
-          itemsDOM.forEach(item => {
+          itemsDOM.forEach((item, index) => {
+            if (index === 0) {
+              item.classList.add('actived');
+            }
             that.nodes.suggests.appendChild(item);
           });
         }
@@ -538,23 +544,37 @@ export default class LinkTool {
   }) {
     const itemsDOM = [];
     const currentDoc = this.config.getCurrentDoc();
-
     // console.log('makeItems', currentDoc, items);
+
     items.forEach((item, index) => {
       if (!(currentDoc && currentDoc.eid === item.eid)) {
         const itemDOM = this.make('div', this.CSS.suggestsItem);
 
         itemDOM.setAttribute('data-id', item.eid);
-        itemDOM.setAttribute('data-type', 'essay');
+        itemDOM.setAttribute('data-type', item.file_type);
 
-        const itemTitle = this.make('div', this.CSS.suggestsItemTitle);
+        const itemTitleWrap = this.make('div', this.CSS.suggestsItemTitle);
+        const itemTitleText = this.make('span', this.CSS.suggestsItemTitleText);
 
-        itemTitle.innerHTML = item.name || '未命名';
+        const fileIcon = this.config.getLinkIconHTML(item.file_type);
+
+        itemTitleWrap.innerHTML = fileIcon;
+        itemTitleText.innerHTML = item.name;
+
+        itemTitleWrap.appendChild(itemTitleText);
+        const dateTime = this.config.getFormateTime(item.created_at);
+        const date = dateTime === '几秒' ? '刚刚' : `${dateTime}前 `;
+
         const itemContent = this.make('div', this.CSS.suggestsItemContent);
 
-        itemContent.innerHTML = item.summary || '还为开始书写';
+        if (item.summary) {
+          itemContent.innerHTML = date + ' | ' + item.summary;
+        } else {
+          // console.log('getFileTypeName', item.file_type);
+          itemContent.innerHTML = date + ' | ' + this.config.getFileTypeName(item.file_type);
+        }
 
-        itemDOM.appendChild(itemTitle);
+        itemDOM.appendChild(itemTitleWrap);
         itemDOM.appendChild(itemContent);
         itemDOM.addEventListener('click', this.selectSuggestItem(item));
 
