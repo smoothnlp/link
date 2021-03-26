@@ -140,7 +140,6 @@ export default class LinkTool {
    * Renders Block content
    *
    * @public
-   *
    * @returns {HTMLDivElement}
    */
   render() {
@@ -347,16 +346,16 @@ export default class LinkTool {
       });
       this.nodes.input.addEventListener('paste', this.setSuggestItem());
       // todo：这里要改成输入连接，搜索文档接口获得数据文档数据，生成block
-      this.nodes.input.addEventListener('keydown', (event) => {
-        const [ENTER, A] = [13, 65];
+      this.api.listeners.on(this.nodes.input, 'keydown', (event) => {
+        const [ENTER, A, DOWN, UP] = [13, 65, 40, 38];
         const cmdPressed = event.ctrlKey || event.metaKey;
 
         switch (event.keyCode) {
           case ENTER:
             event.preventDefault();
             event.stopPropagation();
-            this.setSuggestItem()(event);
-            this.startFetching(event);
+            this.__enterKeyHandler(event);
+
             break;
           case A:
             if (cmdPressed) {
@@ -365,10 +364,22 @@ export default class LinkTool {
               this.selectLinkUrl(event);
             }
             break;
+          case DOWN:
+            this.__inputUpAndDownKeyHandler(event, true);
+            // console.log('keydown 2', DOWN);
+            // event.preventDefault();
+            // event.stopPropagation();
+            break;
+          case UP:
+            this.__inputUpAndDownKeyHandler(event, false);
+            event.preventDefault();
+            event.stopPropagation();
+            break;
         }
-      }, true);
+      });
+      // this.nodes.input.addEventListener('keydown', , false);
 
-      this.nodes.input.addEventListener('keyup', debounce(this.setSuggestItem(), 2000));
+      this.nodes.input.addEventListener('keyup', debounce(this.setSuggestItem(), 100));
       this.nodes.input.addEventListener('focus', this.onInputFocus(), true);
       this.nodes.input.addEventListener('blur', this.onInputBlur());
     }
@@ -381,6 +392,59 @@ export default class LinkTool {
   }
 
   /**
+   *
+   * @param {*} event
+   * @param {boolean} [isDown=true]
+   * @memberof LinkTool
+   */
+  __inputUpAndDownKeyHandler(event, isDown = true) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const children = this.nodes.suggests.childNodes;
+
+    if (!children.length) {
+      return;
+    }
+    const activedEle = [ ...children ].find(node => node.classList.contains('actived'));
+
+    if (!activedEle) {
+      children[0].classList.add('actived');
+    } else {
+      let nextEle = isDown ? activedEle.nextSibling : activedEle.previousSibling;
+
+      if (!nextEle) {
+        nextEle = children[0];
+      }
+      activedEle.classList.remove('actived');
+      nextEle.classList.add('actived');
+      nextEle.parentNode.scrollTo({
+        top: nextEle.offsetTop,
+        behavior: 'smooth',
+      });
+    }
+  }
+
+  /**
+   *
+   *
+   * @param {*} event
+   * @memberof LinkTool
+   */
+  __enterKeyHandler(event) {
+    console.log('__enterKeyHandler', event);
+    const activeEle = this.nodes.suggests.querySelector('.actived');
+
+    if (activeEle) {
+      activeEle.click();
+    } else {
+      if (this.nodes.input.textContent) {
+        this.startFetching(event);
+      }
+    }
+  }
+
+  /**
    * 对焦事件
    *
    * @param event
@@ -388,18 +452,24 @@ export default class LinkTool {
   onInputFocus() {
     const that = this;
 
-    return function (event) {
+    return async function (event) {
       event.stopPropagation();
       that.nodes.suggests.classList.add(that.CSS.suggestsShow);
       // 如果是空的话，那么调取所
       if (that.nodes.input.textContent.trim().length === 0) {
         // 加载默认数据
-        let defaultSuggests = that.config.suggests || [];
+        const value = that.nodes.input.textContent;
+        const res = await that.config.suggester(value);
 
-        // console.log('defaultSuggests 1', defaultSuggests);
+        if (!res && !res.total) {
+          return;
+        }
+
+        let defaultSuggests = res.items || [];
+
         defaultSuggests = defaultSuggests.filter(doc => doc.is_trash === false);
         // console.log('defaultSuggests 1', defaultSuggests);
-        Array.isArray(defaultSuggests) && defaultSuggests.reverse();
+        // Array.isArray(defaultSuggests) && defaultSuggests.reverse();
         if (that.config.suggests && that.config.suggests.length > 0) {
           that.nodes.suggests.innerHTML = '';
           const itemsDOM = that.makeItems({
@@ -435,21 +505,24 @@ export default class LinkTool {
    *
    * @param event
    */
-  setSuggestItem(event) {
+  setSuggestItem() {
     const that = this;
 
-    return async function () {
+    return async function (event) {
       const value = that.nodes.input.textContent;
-      const res = await that.config.suggester(value);
 
-      // console.log(res);
-      if (res) {
-        that.nodes.suggests.innerHTML = '';
-        const itemsDOM = that.makeItems(res);
+      if (that.oldInputValue !== value) {
+        that.oldInputValue = value;
+        const res = await that.config.suggester(value);
 
-        itemsDOM.forEach(item => {
-          that.nodes.suggests.appendChild(item);
-        });
+        if (res) {
+          that.nodes.suggests.innerHTML = '';
+          const itemsDOM = that.makeItems(res);
+
+          itemsDOM.forEach(item => {
+            that.nodes.suggests.appendChild(item);
+          });
+        }
       }
     };
   }
