@@ -277,6 +277,16 @@
     align-items: center;
     border: 0 !important;
     padding: 0 !important;
+    .favicon{
+      display: flex;
+      align-items: center;
+      img {
+        width:24px;
+        height:24px;
+      }
+    }
+
+
     /* .iconfont {
       font-size: 20px !important;
       &.icondoc{

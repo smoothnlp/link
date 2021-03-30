@@ -80,6 +80,7 @@ export default class LinkTool {
   }) {
     this.api = api;
     this.readOnly = readOnly;
+    this.oldInputValue = '';
     /**
      * Tool's initial config
      */
@@ -188,6 +189,7 @@ export default class LinkTool {
    */
   set data(data) {
     // const compared = this.compareData(data, this._data);
+    console.log('set data', data);
     const hasMeta = !!(data.meta && Object.keys(data.meta).length);
 
     this._data = Object.assign({}, {
@@ -351,9 +353,10 @@ export default class LinkTool {
       this.nodes.input.addEventListener('paste', this.setSuggestItem());
       // todo：这里要改成输入连接，搜索文档接口获得数据文档数据，生成block
       this.api.listeners.on(this.nodes.input, 'keydown', (event) => {
-        const [ENTER, A, DOWN, UP, TAB] = [13, 65, 40, 38, 9];
+        const [ENTER, A, DOWN, UP, TAB, BACKSPACE] = [13, 65, 40, 38, 9, 8];
         const cmdPressed = event.ctrlKey || event.metaKey;
-        // console.log('makeInputHolder', event);
+
+        console.log('makeInputHolder', event);
 
         switch (event.keyCode) {
           case ENTER:
@@ -372,6 +375,9 @@ export default class LinkTool {
           case DOWN:
             this.__inputUpAndDownKeyHandler(event, true);
             break;
+          case BACKSPACE:
+            this.__backspaceHandler(event);
+            break;
           case UP:
             this.__inputUpAndDownKeyHandler(event, false);
             break;
@@ -389,6 +395,25 @@ export default class LinkTool {
     inputHolder.appendChild(this.nodes.suggests);
 
     return inputHolder;
+  }
+
+  /**
+   *
+   *
+   * @param {*} event
+   * @memberof LinkTool
+   */
+  __backspaceHandler(event) {
+    if (!this.nodes.input.textContent) {
+      const blockIndex = this.api.blocks.getCurrentBlockIndex();
+
+      this.api.caret.setToPreviousBlock();
+      // console.log('__backspaceHandler', blockIndex, this.api.blocks, this.api);
+      this.api.blocks.delete(blockIndex);
+
+      event.preventDefault();
+      event.stopPropagation();
+    }
   }
 
   /**
@@ -438,10 +463,11 @@ export default class LinkTool {
 
     const activeEle = this.nodes.suggests.querySelector('.actived');
 
+    // 正则判断URL：
     if (activeEle) {
       activeEle.click();
     } else {
-      if (this.nodes.input.textContent) {
+      if (this.nodes.input.textContent && this.__isURL(this.nodes.input.textContent)) {
         this.startFetching(event);
       }
     }
@@ -523,10 +549,15 @@ export default class LinkTool {
           const itemsDOM = that.makeItems(res);
 
           itemsDOM.forEach((item, index) => {
-            if (index === 0) {
+            if (index === 0 && !that.__isURL(that.nodes.input.textContent)) {
               item.classList.add('actived');
             }
             that.nodes.suggests.appendChild(item);
+          });
+
+          that.nodes.suggests.scrollTo({
+            top: 0,
+            behavior: 'smooth',
           });
         }
       }
@@ -559,10 +590,10 @@ export default class LinkTool {
         const fileIcon = this.config.getLinkIconHTML(item.file_type);
 
         itemTitleWrap.innerHTML = fileIcon;
-        itemTitleText.innerHTML = item.name;
+        itemTitleText.innerHTML = item.name || '未命名';
 
         itemTitleWrap.appendChild(itemTitleText);
-        const dateTime = this.config.getFormateTime(item.created_at);
+        const dateTime = this.config.getFormateTime(item.updated_at);
         const date = dateTime === '几秒' ? '刚刚' : `${dateTime}前 `;
 
         const itemContent = this.make('div', this.CSS.suggestsItemContent);
@@ -596,7 +627,7 @@ export default class LinkTool {
     return function (event) {
       event.stopPropagation();
       event.preventDefault();
-      const data = that.config.setSuggestionSelectedData(item);
+      const data = that.config.setSuggestionSelectedData(item, item.file_type);
 
       that.data = data;
       that.updateView();
@@ -617,7 +648,11 @@ export default class LinkTool {
 
     this.removeErrorStyle();
     // 如果是外部url，调用后端url即系
-    this.fetchLinkData(url);
+    if (this.__isURL(url)) {
+      this.fetchLinkData(url);
+    } else {
+      this.applyErrorStyle();
+    }
   }
 
   /**
@@ -683,6 +718,7 @@ export default class LinkTool {
     image,
     description,
     time,
+    favicon,
   }) {
     console.log('showLinkPreview', this.nodes);
     this.nodes.container.appendChild(this.nodes.linkContent);
@@ -712,7 +748,7 @@ export default class LinkTool {
 
     this.nodes.linkContent.appendChild(this.nodes.linkText);
 
-    let showType = this.config.getLinkIconHTML(this.data.target_type);
+    let showType = this.config.getLinkIconHTML(this.data.target_type, this.data.meta.favicon);
 
     if (!showType) {
       showType = '<span class="el-icon-s-management"></span>' + '文档';
@@ -782,7 +818,7 @@ export default class LinkTool {
     const content = await this.config.getWebContent(url);
 
     if (content) {
-      // console.log('fetchLinkData', content);
+      console.log('fetchLinkData', content);
       this.data = this.config.setSuggestionSelectedData(content, 'webs');
       this.hideProgress().then(() => {
         // this.createLink(this.data);
@@ -791,10 +827,22 @@ export default class LinkTool {
       });
     } else {
       this.config.message({
-        message: '此链接无法导入',
-        type: 'error',
+        message: '此链访问存在问题，导致无法正常解析',
+        type: 'warning',
       });
       this.applyErrorStyle();
+
+      this.data = this.config.setSuggestionSelectedData({
+        url,
+        title: url,
+        favicon: '',
+        description: url,
+      }, 'webs');
+      this.hideProgress().then(() => {
+        // this.createLink(this.data);
+        this.nodes.inputHolder.remove();
+        this.updateView();
+      });
     }
 
     // console.log('fetchLinkData', content);
@@ -828,6 +876,27 @@ export default class LinkTool {
 
       return v.toString(16);
     });
+  }
+
+  /**
+   *
+   * 判断URL
+   *
+   * @param {*} testURL
+   * @returns
+   * @memberof LinkTool
+   */
+  __isURL(testURL) {
+    // eslint-disable-next-line no-useless-escape
+    const strRegex = '^((https|http)?:\/\/.*)|^(www\..*)';
+    // eslint-disable-next-line prefer-const
+    let re = new RegExp(strRegex);
+
+    if (re.test(testURL)) {
+      return (true);
+    } else {
+      return (false);
+    }
   }
 
   /**
