@@ -118,12 +118,8 @@ export default class LinkTool {
     if (JSON.stringify(data) !== '{}') {
       const currentDoc = config.getCurrentDoc();
 
-      // console.log('currentDoc', currentDoc);
       if (data.target_id === currentDoc.eid) {
-        config.message({
-          message: '文档不能自己嵌入自己,请选择其他文档',
-          type: 'error',
-        });
+        console.warn('文档不能自己嵌入自己,请选择其他文档', data.target_id, currentDoc.eid);
 
         return;
       }
