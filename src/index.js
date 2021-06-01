@@ -306,6 +306,7 @@ export default class LinkTool {
       inputError: 'link-tool__input-holder--error',
       linkContent: 'link-tool__content',
       linkContentRendered: 'link-tool__content--rendered',
+      selectionBar: 'link-tool_selection-bar',
       linkTextContent: 'link-tool_text-content',
       linkTitle: 'link-tool__title',
       linkImage: 'link-tool__image',
@@ -687,10 +688,14 @@ export default class LinkTool {
    * @returns {HTMLElement}
    */
   prepareLinkPreview() {
+    // const holder = this.make('DIV', this.CSS.linkContent);
+
     const holder = this.make('a', this.CSS.linkContent, {
       target: '_blank',
       rel: ' smartlink',
     });
+
+    // holder.appendChild(ATag);
 
     // this.nodes.linkImage = this.make('div', this.CSS.linkImage);
     this.nodes.linkTextContent = this.make('div', this.CSS.linkTextContent);
@@ -717,7 +722,15 @@ export default class LinkTool {
     favicon,
   }) {
     console.log('showLinkPreview', this.nodes);
-    this.nodes.container.appendChild(this.nodes.linkContent);
+    const wrap = this.make('div', this.CSS.linkContentRendered);
+    const selectionBar = this.make('div', this.CSS.selectionBar);
+    const selectionBarIcon = this.make('span', ['iconfont', 'iconaim']);
+
+    selectionBar.appendChild(selectionBarIcon);
+    wrap.appendChild(this.nodes.linkContent);
+    wrap.appendChild(selectionBar);
+
+    this.nodes.container.appendChild(wrap);
 
     // if (image && image.url) {
     //   this.nodes.linkImage.style.backgroundImage = 'url(' + image.url + ')';
@@ -735,7 +748,7 @@ export default class LinkTool {
     // this.nodes.linkTextContent.appendChild(this.nodes.linkDescription);
     this.nodes.linkContent.appendChild(this.nodes.linkTextContent);
 
-    this.nodes.linkContent.classList.add(this.CSS.linkContentRendered);
+    // this.nodes.linkContent.classList.add(this.CSS.linkContentRendered);
     this.nodes.linkContent.setAttribute('href', this.data.link);
     this.nodes.linkContent.setAttribute('data-target-type', this.data.target_type);
     this.nodes.linkContent.setAttribute('data-target-id', this.data.target_id);
