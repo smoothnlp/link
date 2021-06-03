@@ -115,15 +115,6 @@ export default class LinkTool {
       linkText: null,
     };
     // console.log('constructor', data);
-    if (JSON.stringify(data) !== '{}') {
-      const currentDoc = config.getCurrentDoc();
-
-      if (data.target_id === currentDoc.eid) {
-        console.warn('文档不能自己嵌入自己,请选择其他文档', data.target_id, currentDoc.eid);
-
-        return;
-      }
-    }
     // 初始有值的情况
     this._data = JSON.stringify(data) !== '{}' ? data : {
       target: '',
