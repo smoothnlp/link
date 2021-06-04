@@ -715,6 +715,12 @@ export default class LinkTool {
     console.log('showLinkPreview', this.nodes);
     const wrap = this.make('div', this.CSS.linkContentRendered);
     const selectionBar = this.make('div', this.CSS.selectionBar);
+
+    selectionBar.addEventListener('click', () => {
+      const currentBlockIndex = this.api.blocks.getCurrentBlockIndex();
+
+      this.api.smooth.setSelectedBlockByIndex(currentBlockIndex);
+    });
     const selectionBarIcon = this.make('span', ['iconfont', 'iconaim']);
 
     selectionBar.appendChild(selectionBarIcon);
