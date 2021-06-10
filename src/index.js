@@ -137,6 +137,13 @@ export default class LinkTool {
     this.nodes.wrapper.setAttribute('id', this.data.id);
     this.nodes.wrapper.setAttribute('data-block-id', this.data.id);
     this.nodes.wrapper.setAttribute('data-block-type', 'link-block');
+    // const currentBlockIndex = this.api.blocks.getCurrentBlockIndex();
+
+    this.nodes.wrapper.setAttribute('tabindex', 0);
+    this.nodes.wrapper.addEventListener('keydown', (event) => {
+      // console.log('editorjsCode in linkblock keydown event', event);
+      this.__keydownEventHandle(event);
+    });
     this.nodes.container = this.make('div', this.CSS.container);
 
     this.nodes.inputHolder = this.makeInputHolder();
@@ -156,6 +163,63 @@ export default class LinkTool {
     this.nodes.wrapper.appendChild(this.nodes.container);
 
     return this.nodes.wrapper;
+  }
+
+  /**
+   *
+   * @param {*} event
+   * @returns
+   */
+  __keydownEventHandle(event) {
+    const KEY_CODE_LIST = [13, 8];
+    const [ENTER, BACKSPACE] = KEY_CODE_LIST; // key codes
+
+    switch (event.keyCode) {
+      case ENTER:
+        this.__blockEnterKeyHandler(event);
+        break;
+      case BACKSPACE:
+        this.__blockBackspaceKeyHandler(event);
+        break;
+    }
+  }
+
+  /**
+   * @param event
+   */
+  __blockEnterKeyHandler(event) {
+    console.log('editorjsCode linkblock enterKey event on block', event);
+    const target = event.target;
+
+    event.preventDefault();
+
+    const currentBlockIndex = this.api.blocks.getCurrentBlockIndex();
+
+    // console.log("superlist insert block", currentBlockIndex)
+    // this.api.smooth.enter(event, {
+    //   text: "",
+    // });
+    this.api.blocks.insert(
+      'paragraph',
+      {
+        text: '',
+      },
+      null,
+      currentBlockIndex + 1,
+      true
+    );
+    this.api.caret.setToBlock(currentBlockIndex + 1);
+  }
+
+  /**
+   * @param event
+   */
+  __blockBackspaceKeyHandler(event) {
+    // console.log('editorjsCode linkblock backspaceKey event on block', event);
+    event.preventDefault();
+    const currentBlockIndex = this.api.blocks.getCurrentBlockIndex();
+
+    this.api.blocks.delete(currentBlockIndex);
   }
 
   /**
@@ -344,7 +408,7 @@ export default class LinkTool {
         const [ENTER, A, DOWN, UP, TAB, BACKSPACE] = [13, 65, 40, 38, 9, 8];
         const cmdPressed = event.ctrlKey || event.metaKey;
 
-        console.log('makeInputHolder', event);
+        console.log('editorjsCode makeInputHolder', event);
 
         switch (event.keyCode) {
           case ENTER:
@@ -392,6 +456,7 @@ export default class LinkTool {
    * @memberof LinkTool
    */
   __backspaceHandler(event) {
+    event.stopPropagation(); // 如果是Input内容操作，不外部父组件传递；
     if (!this.nodes.input.textContent) {
       const blockIndex = this.api.blocks.getCurrentBlockIndex();
 
@@ -446,6 +511,7 @@ export default class LinkTool {
    */
   __enterKeyHandler(event) {
     // console.log('__enterKeyHandler', event);
+    console.log('editorjsCode linkblock enterKey event inner input  block', event);
     event.preventDefault();
     event.stopPropagation();
 
@@ -716,11 +782,6 @@ export default class LinkTool {
     const wrap = this.make('div', this.CSS.linkContentRendered);
     const selectionBar = this.make('div', this.CSS.selectionBar);
 
-    selectionBar.addEventListener('click', () => {
-      const currentBlockIndex = this.api.blocks.getCurrentBlockIndex();
-
-      this.api.smooth.setSelectedBlockByIndex(currentBlockIndex);
-    });
     const selectionBarIcon = this.make('span', ['iconfont', 'iconaim']);
 
     selectionBar.appendChild(selectionBarIcon);
