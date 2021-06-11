@@ -781,10 +781,15 @@ export default class LinkTool {
     console.log('showLinkPreview', this.nodes);
     const wrap = this.make('div', this.CSS.linkContentRendered);
     const selectionBar = this.make('div', this.CSS.selectionBar);
+    
 
-    const selectionBarIcon = this.make('span', ['iconfont', 'iconaim']);
+    // const selectionBarIcon = this.make('span', ['iconfont', 'iconaim'], {
+    //   style:{
+    //     visibility: 'hidden'
+    //   }
+    // });
 
-    selectionBar.appendChild(selectionBarIcon);
+    // selectionBar.appendChild(selectionBarIcon);
     wrap.appendChild(this.nodes.linkContent);
     wrap.appendChild(selectionBar);
 

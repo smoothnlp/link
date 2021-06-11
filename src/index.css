@@ -149,7 +149,8 @@
     }
   }
   &_selection-bar {
-    width: 24px;
+    /* width: 24px; */
+    width: 10%;
     height: 24px;
     display:flex;
     align-items: center;
