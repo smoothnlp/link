@@ -23,6 +23,7 @@ import ToolboxIcon from './svg/toolbox.svg';
 import polyfill from 'url-polyfill';
 import debounce from 'lodash.debounce';
 import untils from './untils';
+import {v4 as uuidv4} from 'uuid';
 
 /**
  * @typedef {object} UploadResponseFormat
@@ -140,6 +141,20 @@ export default class LinkTool {
     // const currentBlockIndex = this.api.blocks.getCurrentBlockIndex();
 
     this.nodes.wrapper.setAttribute('tabindex', 0);
+
+    this.nodes.wrapper.addEventListener('copy', (event)=>{
+      console.log('editorjs plugin linktool copy event')
+      this.copyEditorjsData2ClipBoard(event);
+    });
+
+    this.nodes.wrapper.addEventListener('cut', (event)=>{
+      this.copyEditorjsData2ClipBoard(event);
+
+      const currentBlockIndex = this.api.blocks.getCurrentBlockIndex();
+      this.api.blocks.delete(currentBlockIndex);
+
+    })
+
     this.nodes.wrapper.addEventListener('keydown', (event) => {
       // console.log('editorjsCode in linkblock keydown event', event);
       this.__keydownEventHandle(event);
@@ -163,6 +178,15 @@ export default class LinkTool {
     this.nodes.wrapper.appendChild(this.nodes.container);
 
     return this.nodes.wrapper;
+  }
+  copyEditorjsData2ClipBoard(event){
+    const tmpData = this.data;
+    const editorJSData = [{
+      data: tmpData, 
+      tool: "linkBlock",
+      id:uuidv4(),
+    }]
+    event.clipboardData.setData('application/x-editor-js',JSON.stringify(editorJSData));
   }
 
   /**
